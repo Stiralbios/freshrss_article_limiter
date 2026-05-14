@@ -1,55 +1,69 @@
 # FreshRSS Articles Limiter
 
-Limit the number of article left unread in freshrss
+Limit the number of unread articles in FreshRSS by having an LLM rate them and marking the lower-rated ones as read.
 
-## How does it work
+## How it works
 
 The script:
-- Call the freshrss api to get all the unread items
-- Organize them in a json, with id, title, category, description, content
-- Send the item one by one to a llm to rate them (0 to 100) with the configured prompt. The llm should only send back a floating number between 0 to 100 (if possible as structured json)
-- Add the rate back to the json
-- Order the items by the ranking
-- Filter the order to separated the X best items from the rest
-- Call the freshrss API to mark the worst filtered item as read
-
+1. Calls the FreshRSS API to get all unread articles
+2. Organizes them into structured objects (id, title, author, content, URL, feed_id)
+3. Rates each article 0–100 via LLM based on your personalized prompt
+4. Caches ratings to a JSON file to avoid redundant LLM calls on future runs
+5. Sorts articles by rating (descending)
+6. Keeps the top N articles unread, marks the rest as read via FreshRSS API
 
 ## Environment variables
 
-FRESHRSS_PYTHON_API_HOST
-FRESHRSS_PYTHON_API_USERNAME
-FRESHRSS_PYTHON_API_PASSWORD
-OPENAI_BASE_URL
-OPENAI_API_KEY
-INFERENCE_MODEL
-USER_PROMPT_FILENAME
-NB_ARTICLES_KEEPT
-ENABLE_THINKING       # Set to "true" to enable model reasoning/thinking (default: false)
-REASONING_EFFORT      # Reasoning effort level: low, medium, high (default: medium, requires ENABLE_THINKING=true)
-CACHE_FILENAME        # JSON file to cache article ratings between runs (default: scores_cache.json)
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `FRESHRSS_PYTHON_API_HOST` | Yes | FreshRSS instance URL |
+| `FRESHRSS_PYTHON_API_USERNAME` | Yes | API username |
+| `FRESHRSS_PYTHON_API_PASSWORD` | Yes | API password |
+| `OPENAI_BASE_URL` | Yes | LLM API base URL (e.g., Ollama, OpenRouter, OpenAI) |
+| `OPENAI_API_KEY` | Yes | LLM API key |
+| `INFERENCE_MODEL` | Yes | Model name (e.g., `deepseek-v4-flash:cloud`) |
+| `USER_PROMPT_FILENAME` | Yes | Path to prompt file (e.g., `user_prompt.txt`) |
+| `NB_ARTICLES_KEEPT` | Yes | Number of top-rated articles to keep unread |
+| `ENABLE_THINKING` | No | Set to `true` to enable model reasoning (default: false) |
+| `REASONING_EFFORT` | No | Reasoning effort: `low`, `medium`, `high` (default: medium) |
+| `CACHE_FILENAME` | No | JSON cache file path (default: `scores_cache.json`) |
 
 ## CLI Arguments
 
-- `--dry-run`: do not mark the freshrss feeds are read (limits to 5 articles by default)
-- `--nb-evaluated`: override the dry run limit (default: 5)
-- `--verbose`: show LLM prompts, responses, and JSON dumps
-- `--rate-limiter`: seconds between LLM calls
+- `--dry-run`: Do not mark articles as read (limits to 5 articles by default)
+- `--nb-evaluated`: Override dry-run limit (default: 5)
+- `--verbose`: Show LLM prompts, responses, and JSON dumps
+- `--rate-limiter`: Seconds between LLM calls
 
-## ev env
+## Running with Docker
+
+```bash
+# Dry-run (test without marking articles as read)
+make dry-run
+
+# Live run (actually marks lower-rated articles as read)
+make run
+```
+
+The cache file is automatically persisted between Docker runs via a volume mount.
+
+## Setup
 
 Python 3.13
 Use a venv
-libs: freshrss-api, langchain
+Install deps: `pip install -r requirements.txt`
+
+Key libs: `freshrss-api`, `langchain-openai`, `python-dotenv`
 
 ## Coding standard
 
-- Use requirement.txt
-- Use TDD, mock the calls to external tools (freshrss, llm)
+- Use `requirements.txt`
+- Use TDD, mock external calls (FreshRSS, LLM)
 - Add logs
-- Use the dry-run if you need to test real api call
+- Use `--dry-run` to test real API calls
 - YAGNI, DRY
-- The app is stateless
+- Stateless app (state is externalized to FreshRSS + cache file)
 
 ## Note
 
-Vibecodded for personal use, don't expect quality
+Vibecodded for personal use, don't expect quality.
