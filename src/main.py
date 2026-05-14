@@ -12,10 +12,12 @@ from langchain_openai import ChatOpenAI
 from src.limiter import (
     add_rating,
     fetch_unread_articles,
+    load_cache,
     mark_articles_as_read,
     organize_articles,
     partition_articles,
     rate_article,
+    save_cache,
     sort_by_rating,
     RatingSchema,
     RatedArticle,
@@ -81,10 +83,12 @@ def main() -> None:
     rate_limiter_delay = args.rate_limiter if args.rate_limiter is not None else 0.0
     enable_thinking = os.environ.get("ENABLE_THINKING", "false").lower() in ("true", "1", "yes")
     reasoning_effort = os.environ.get("REASONING_EFFORT", "medium") if enable_thinking else None
+    cache_filename = os.environ.get("CACHE_FILENAME", "scores_cache.json")
     logger.info("FreshRSS host: %s", host)
     logger.info("LLM model: %s", inference_model)
     logger.info("NB_ARTICLES_KEEPT=%s", nb_articles_kept)
     logger.info("RATE_LIMITER_DELAY=%.2f seconds", rate_limiter_delay)
+    logger.info("Cache file: %s", cache_filename)
     logger.info("Thinking enabled: %s", enable_thinking)
     if enable_thinking:
         logger.info("Reasoning effort: %s", reasoning_effort)
@@ -106,6 +110,8 @@ def main() -> None:
     logger.info("LLM client initialized with structured output and plain-text fallback")
 
     system_prompt = load_system_prompt(prompt_filename)
+    cache = load_cache(cache_filename)
+    logger.info("Loaded %s cached ratings", len(cache))
 
     dry_run = args.dry_run
     max_articles = args.nb_evaluated if dry_run else None
@@ -134,9 +140,16 @@ def main() -> None:
         if rate_limiter_delay > 0 and idx > 1:
             logger.info("Rate limiter: sleeping %.2f seconds", rate_limiter_delay)
             time.sleep(rate_limiter_delay)
-        rating = rate_article(
-            article, structured_llm, base_llm, system_prompt, verbose=args.verbose
-        )
+        
+        # Check cache first
+        cache_key = str(article.id)
+        if cache_key in cache:
+            logger.info("Using cached rating %.2f for article %s", cache[cache_key], article.id)
+            rating = cache[cache_key]
+        else:
+            rating = rate_article(
+                article, structured_llm, base_llm, system_prompt, verbose=args.verbose
+            )
         rated_articles.append(add_rating(article, rating))
         logger.info("Rated article %s: %.2f", article.id, rating)
 
@@ -167,6 +180,11 @@ def main() -> None:
     logger.info("Partition complete: keeping %s, marking %s as read", len(kept), len(to_mark))
 
     mark_articles_as_read(client, to_mark, dry_run=dry_run)
+    
+    # Save ratings to cache for future runs (all processed articles)
+    for article in rated_articles:
+        cache[str(article.id)] = article.rating
+    save_cache(cache_filename, cache)
     logger.info("Done!")
 
 

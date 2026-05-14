@@ -1,5 +1,7 @@
 """FreshRSS Article Limiter functions."""
+import json
 import logging
+import os
 import re
 import time
 from dataclasses import dataclass
@@ -15,6 +17,50 @@ MAX_RETRIES = 2
 # True until the first structured-output failure, then permanently False
 # so we don't waste retries on every article when the model doesn't support it.
 _structured_output_available: bool = True
+
+
+def load_cache(filename: str) -> dict[str, float]:
+    """Load cached article ratings from a JSON file.
+
+    Args:
+        filename: Path to the JSON cache file.
+
+    Returns:
+        Dict mapping article ID strings to float ratings.
+    """
+    if not os.path.exists(filename):
+        logger.info("No cache file found at %s; starting with empty cache", filename)
+        return {}
+    try:
+        with open(filename, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        if not isinstance(data, dict):
+            logger.warning("Cache file %s is not a dict; starting fresh", filename)
+            return {}
+        # Convert string values to float
+        result = {}
+        for k, v in data.items():
+            try:
+                result[k] = float(v)
+            except (ValueError, TypeError):
+                logger.warning("Invalid cached rating for article %s: %s; skipping", k, v)
+        logger.info("Loaded %s cached ratings from %s", len(result), filename)
+        return result
+    except json.JSONDecodeError as exc:
+        logger.warning("Failed to parse cache file %s: %s; starting fresh", filename, exc)
+        return {}
+
+
+def save_cache(filename: str, cache: dict[str, float]) -> None:
+    """Save cached article ratings to a JSON file.
+
+    Args:
+        filename: Path to the JSON cache file.
+        cache: Dict mapping article ID strings to float ratings.
+    """
+    with open(filename, "w", encoding="utf-8") as f:
+        json.dump(cache, f, indent=2, ensure_ascii=False)
+    logger.info("Saved %s cached ratings to %s", len(cache), filename)
 
 
 @dataclass(frozen=True)

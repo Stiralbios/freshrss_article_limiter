@@ -26,6 +26,7 @@ USER_PROMPT_FILENAME
 NB_ARTICLES_KEEPT
 ENABLE_THINKING       # Set to "true" to enable model reasoning/thinking (default: false)
 REASONING_EFFORT      # Reasoning effort level: low, medium, high (default: medium, requires ENABLE_THINKING=true)
+CACHE_FILENAME        # JSON file to cache article ratings between runs (default: scores_cache.json)
 
 ## CLI Arguments
 

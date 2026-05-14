@@ -1,4 +1,6 @@
 """Unit tests for the FreshRSS Article Limiter."""
+import json
+import os
 import unittest
 from unittest.mock import MagicMock, patch
 
@@ -10,10 +12,12 @@ from src.limiter import (
     RatingSchema,
     add_rating,
     fetch_unread_articles,
+    load_cache,
     mark_articles_as_read,
     organize_articles,
     partition_articles,
     rate_article,
+    save_cache,
     sort_by_rating,
 )
 
@@ -246,6 +250,59 @@ class TestMarkArticlesAsRead(unittest.TestCase):
 
         mark_articles_as_read(client, articles, dry_run=True)
         client.set_mark.assert_not_called()
+
+
+class TestCache(unittest.TestCase):
+    def test_load_cache_creates_empty_when_file_missing(self):
+        result = load_cache("/tmp/nonexistent_cache_xyz.json")
+        self.assertEqual(result, {})
+
+    def test_load_cache_loads_valid_json(self):
+        import tempfile
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            f.write('{"1": 85.0, "2": 92.5}')
+            path = f.name
+        try:
+            result = load_cache(path)
+            self.assertEqual(result, {"1": 85.0, "2": 92.5})
+        finally:
+            os.remove(path)
+
+    def test_load_cache_skips_invalid_values(self):
+        import tempfile
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            f.write('{"1": "invalid", "2": 70.0}')
+            path = f.name
+        try:
+            result = load_cache(path)
+            self.assertEqual(result, {"2": 70.0})
+        finally:
+            os.remove(path)
+
+    def test_save_cache_creates_json_file(self):
+        import tempfile
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            path = f.name
+        try:
+            save_cache(path, {"5": 88.0, "10": 42.5})
+            with open(path, "r") as f:
+                data = json.load(f)
+            self.assertEqual(data, {"5": 88.0, "10": 42.5})
+        finally:
+            os.remove(path)
+
+    def test_save_cache_overwrites_existing(self):
+        import tempfile
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            f.write('{"old": 1.0}')
+            path = f.name
+        try:
+            save_cache(path, {"new": 99.0})
+            with open(path, "r") as f:
+                data = json.load(f)
+            self.assertEqual(data, {"new": 99.0})
+        finally:
+            os.remove(path)
 
 
 if __name__ == "__main__":
