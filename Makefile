@@ -16,7 +16,7 @@ run: build
 	docker run --rm \
 		-v $(PWD)/.env:/app/.env:ro \
 		-v $(PWD)/user_prompt.txt:/app/user_prompt.txt:ro \
-		$(IMAGE_NAME)
+		$(IMAGE_NAME) --rate-limiter 1
 
 help:
 	@echo "Available targets:"

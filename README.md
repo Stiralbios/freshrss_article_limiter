@@ -46,3 +46,7 @@ libs: freshrss-api, langchain
 - Use the dry-run if you need to test real api call
 - YAGNI, DRY
 - The app is stateless
+
+## Note
+
+Vibecodded for personal use, don't expect quality
