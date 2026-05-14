@@ -79,20 +79,29 @@ def main() -> None:
     prompt_filename = os.environ["USER_PROMPT_FILENAME"]
     nb_articles_kept = int(os.environ["NB_ARTICLES_KEEPT"])
     rate_limiter_delay = args.rate_limiter if args.rate_limiter is not None else 0.0
+    enable_thinking = os.environ.get("ENABLE_THINKING", "false").lower() in ("true", "1", "yes")
+    reasoning_effort = os.environ.get("REASONING_EFFORT", "medium") if enable_thinking else None
     logger.info("FreshRSS host: %s", host)
     logger.info("LLM model: %s", inference_model)
     logger.info("NB_ARTICLES_KEEPT=%s", nb_articles_kept)
     logger.info("RATE_LIMITER_DELAY=%.2f seconds", rate_limiter_delay)
+    logger.info("Thinking enabled: %s", enable_thinking)
+    if enable_thinking:
+        logger.info("Reasoning effort: %s", reasoning_effort)
 
     client = FreshRSSAPI(host=host, username=username, password=password)
     logger.info("FreshRSS API client initialized")
 
-    base_llm = ChatOpenAI(
-        base_url=openai_base,
-        api_key=openai_key,
-        model=inference_model,
-        temperature=0.0,
-    )
+    llm_kwargs = {
+        "base_url": openai_base,
+        "api_key": openai_key,
+        "model": inference_model,
+        "temperature": 0.0,
+    }
+    if enable_thinking:
+        llm_kwargs["reasoning_effort"] = reasoning_effort
+
+    base_llm = ChatOpenAI(**llm_kwargs)
     structured_llm = base_llm.with_structured_output(RatingSchema)
     logger.info("LLM client initialized with structured output and plain-text fallback")
 

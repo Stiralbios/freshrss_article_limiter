@@ -118,7 +118,7 @@ def rate_article(
         {"role": "system", "content": system_prompt},
         {
             "role": "user",
-            "content": f"Title: {article.title}\nAuthor: {article.author}\nContent: {article.content}",
+            "content": f"URL: {article.url}\nTitle: {article.title}\nAuthor: {article.author}\nContent: {article.content}",
         },
     ]
 
@@ -187,6 +187,16 @@ def rate_article(
             )
             if verbose:
                 logger.debug("[LLM raw response (fallback)] %s", text[:500])
+                if hasattr(raw_response, "response_metadata") and raw_response.response_metadata:
+                    logger.debug(
+                        "[LLM response_metadata] %s",
+                        raw_response.response_metadata,
+                    )
+                if hasattr(raw_response, "additional_kwargs") and raw_response.additional_kwargs:
+                    logger.debug(
+                        "[LLM additional_kwargs] %s",
+                        raw_response.additional_kwargs,
+                    )
 
             match = re.search(r"(\d+(?:\.\d+)?)", text)
             if match:

@@ -24,13 +24,14 @@ OPENAI_API_KEY
 INFERENCE_MODEL
 USER_PROMPT_FILENAME
 NB_ARTICLES_KEEPT
+ENABLE_THINKING       # Set to "true" to enable model reasoning/thinking (default: false)
+REASONING_EFFORT      # Reasoning effort level: low, medium, high (default: medium, requires ENABLE_THINKING=true)
 
 ## CLI Arguments
 
 - `--dry-run`: do not mark the freshrss feeds are read (limits to 5 articles by default)
-- `--nb-evaluated`: overide the dry run limit
+- `--nb-evaluated`: override the dry run limit (default: 5)
 - `--verbose`: show LLM prompts, responses, and JSON dumps
-- `--rate-limiter`: seconds between LLM calls
 - `--rate-limiter`: seconds between LLM calls
 
 ## ev env
