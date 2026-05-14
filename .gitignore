@@ -3,3 +3,4 @@ venv
 __pycache__
 *.pyc
 user_prompt.txt
+scores_cache.json

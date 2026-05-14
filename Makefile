@@ -9,6 +9,7 @@ dry-run: build
 	docker run --rm \
 		-v $(PWD)/.env:/app/.env:ro \
 		-v $(PWD)/user_prompt.txt:/app/user_prompt.txt:ro \
+		-v $(PWD)/scores_cache.json:/app/scores_cache.json \
 		$(IMAGE_NAME) \
 		--dry-run --rate-limiter 1 --nb-evaluated 5
 
@@ -16,6 +17,7 @@ run: build
 	docker run --rm \
 		-v $(PWD)/.env:/app/.env:ro \
 		-v $(PWD)/user_prompt.txt:/app/user_prompt.txt:ro \
+		-v $(PWD)/scores_cache.json:/app/scores_cache.json \
 		$(IMAGE_NAME) --rate-limiter 1
 
 help:
