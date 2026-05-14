@@ -24,15 +24,16 @@ OPENAI_API_KEY
 INFERENCE_MODEL
 USER_PROMPT_FILENAME
 NB_ARTICLES_KEEPT
-RATE_LIMITER_DELAY  # Delay in seconds between LLM calls (default: 0)
 
 ## CLI Arguments
 
-- `--dry-run`: do not mark the freshrss feeds are read (limits to 5 articles)
+- `--dry-run`: do not mark the freshrss feeds are read (limits to 5 articles by default)
+- `--nb-evaluated`: overide the dry run limit
 - `--verbose`: show LLM prompts, responses, and JSON dumps
-- `--rate-limiter`: override RATE_LIMITER_DELAY (seconds between LLM calls)
+- `--rate-limiter`: seconds between LLM calls
+- `--rate-limiter`: seconds between LLM calls
 
-## Loaded file
+## ev env
 
 Python 3.13
 Use a venv
